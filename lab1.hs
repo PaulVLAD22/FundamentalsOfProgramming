@@ -1,3 +1,4 @@
+import Data.Maybe
 data Prog = On Instr
 data Instr = Off | Expr :> Instr
 data Expr = Mem | V Int | Expr :+ Expr
@@ -24,17 +25,6 @@ p2 = On ( (V 5) :> ((Mem :+ (V 4)):> (((Mem :+ (V 3))) :> Off)))
 
 
 
-
-
-
-
-
-
-
-
-
-
--------------------------------------------------------
 
 type Name = String
 data Hask = HTrue
@@ -79,15 +69,15 @@ hEval HFalse r = VBool False
 hEval (HLit i) r = VInt i
 
 hEval (HIf c d e) r = 
-	HIf (hEval c r) (hEval d r) (hEval r r)
-	  where  
-		hif (VBool b) v w = if b then v else w
-		hif _ _ _ = VError
-		
-hEval (d :==: e) r 	=	heq (hEval d r) (hEval e r)
-	where 	heq (VInt) (VInt j) = VBool (i == j)
-			heq _ _ = VError
+	if hEval c r == VBool True then hEval d r else hEval e r
+	
+hEval (d :==: e) r 	=	VBool (hEval d r == hEval e r)
 
 hEval (d :+: e) r 	=	hadd (hEval d r) (hEval e r)
-	where 	hadd (VInt) (VInt j) = VInt (i + j)
-			hadd _ _ = VError
+	where 	
+		hadd (VInt i) (VInt j) = VInt (i + j)
+		hadd _ _ = VError
+
+hEval (HVar x) r = fromMaybe VError (lookup x r)
+
+hEval (HLam x e ) r = VFun (\v -> hEval e ((x,v):r))
