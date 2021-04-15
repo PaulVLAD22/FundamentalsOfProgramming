@@ -1,0 +1,8 @@
+int i;
+bool x;
+x = true;
+i = 1;
+int n;
+n = i + i;
+read("n = ", n);
+print("ai dat n = ", n)
