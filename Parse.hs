@@ -77,7 +77,7 @@ ifStmt = do
     reserved "else"
     elseS <- statement
     return (If cond thenS elseS)
-
+          
 readStmt :: Parser Stmt
 readStmt = do
     reserved "read"
