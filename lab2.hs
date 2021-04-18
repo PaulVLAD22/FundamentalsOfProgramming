@@ -1,4 +1,3 @@
-import Data.Maybe
 import Data.List
 
 type Name = String
@@ -24,17 +23,13 @@ infixl 7 :*:
 
 type Env = [(Name, Integer)]
 
-
 factStmt :: Stmt
 factStmt =
   "p" := Lit 1 ::: "n" := Lit 3 :::
   While (Not (Var "n" :==: Lit 0))
     ( "p" := Var "p" :*: Var "n" :::
       "n" := Var "n" :+: Lit (-1)
-    )
-    
-	
-	
+    )	
 pg1 = Pgm [] factStmt 
 
 

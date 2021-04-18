@@ -1,4 +1,4 @@
-import Data.Maybe
+import Data.Maybe ( fromMaybe )
 data Prog = On Instr
 data Instr = Off | Expr :> Instr
 data Expr = Mem | V Int | Expr :+ Expr

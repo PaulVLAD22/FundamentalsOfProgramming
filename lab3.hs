@@ -91,7 +91,9 @@ addM2 mx my = do
                 return (x+y)
 
 
+cartesianProduct :: Monad m => m a -> m b -> m (a, b)
 cartesianProduct xs ys = xs >>= \x -> ys >>= \y -> return (x, y)
+cartesianProductDo :: Monad m => m a -> m b -> m (a, b)
 cartesianProductDo xs ys = do
     x <- xs
     y <- ys
@@ -103,6 +105,7 @@ testCartesianProduct x y = cartesianProduct x y == cartesianProductDo x y
 -- q'' = quickCheck testCartesianProduct
 
 
+prod :: (t1 -> t2 -> a) -> [t1] -> [t2] -> [a]
 prod f xs ys = [f x y | x <- xs, y <- ys]
 prodDo f xs ys = do
     x <- xs
@@ -224,6 +227,47 @@ instance Functor WriterLS where
   fmap f ma = f <$> ma
 
 
+logincrement1 x =do 
+    tell1 (["increment: "] ++ [show x] ++ ["\n"]) -- adauga la monada
+    Writer' (x+1,[]) --return ul e suprascris mai sus
+
+
+logIncrementn x n
+    | n > 0 = do
+        newX <- logincrement1 x --incrementam valoarea din contextul monadei
+        logIncrementn newX $ n - 1 
+    | otherwise = Writer' (x,[])
+
+tell1 log = Writer' ((), log)
+
+
+isPos1 x = if x >= 0 then Writer' (True, ["poz\n"]) else Writer' (False, ["neg\n"])                         
+
+
+mapWriter1 f xs
+    | null xs = Writer' (mempty, mempty)
+    | otherwise = do
+        let m = map f xs
+        let z = map runWriter m
+        Writer' (map fst z, [concatMap snd z])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 logIncrement' :: Int -> WriterLS Int
 logIncrement' x = Writer'(x + 1, ["Increment: " ++ show x])
 
@@ -256,6 +300,7 @@ mapWriterLSTest = runWriter' $ mapWriterLS isPos' [-2, 2, -1, 1, 0]
 --monada reader 
 
 newtype Reader env a = Reader { runReader :: env -> a }
+
 
 instance Monad (Reader env) where
   return x = Reader (const x)

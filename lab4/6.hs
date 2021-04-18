@@ -1,3 +1,4 @@
+
 newtype StringWriter a = StringWriter { runStringWriter :: (a, String) }
 
 instance Show a => Show (StringWriter a) where

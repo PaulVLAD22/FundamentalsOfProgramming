@@ -6,7 +6,7 @@ instance Show a => Show (EnvReader a) where
 
 instance Functor EnvReader where
     fmap f (Reader x) = Reader $ f . x
-
+    
 instance Applicative EnvReader where
     pure = return
     mf <*> ma = do
@@ -25,7 +25,7 @@ type M a = EnvReader a
 -- final lab6 moanga
 
 ask :: EnvReader Environment
-ask = Reader id -- id e functia identitate,
+ask = Reader id -- iau environmentul asa
 
 local :: (Environment -> Environment) -> EnvReader a -> EnvReader a
 local f ma  = Reader $ (\r -> (runEnvReader ma) (f r))
