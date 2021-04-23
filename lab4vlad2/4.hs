@@ -1,10 +1,27 @@
 
-type M = Either String
+type M a = [a]
 
 --- Limbajul si  Interpretorul
 showM :: Show a => M a -> String
-showM x = show x
+showM x = show  x
 
+newtype EnvReader a = Reader { runEnvReader :: Environment -> a }
+
+instance Show a => Show (EnvReader a)  where 
+  show x = show $ runEnvReader x []
+
+instance Functor EnvReader where
+    fmap f (Reader x) = Reader $ f . x
+
+instance Applicative EnvReader where
+    pure = return
+    mf <*> ma = do
+        f <- mf
+        f <$> ma
+
+instance Monad EnvReader where
+    return a = Reader $ const a
+    m >>= k = Reader $ \r -> runEnvReader (k $ runEnvReader m r) r
 
 pgm :: Term
 pgm = App
@@ -31,6 +48,8 @@ data Term = Var Name
   | Term :+: Term
   | Lam Name Term
   | App Term Term
+  |Fail
+  |Amb Term Term
   deriving (Show)
 
 
@@ -48,22 +67,24 @@ type Environment = [(Name, Value)]
 
 interp :: Term -> Environment -> M Value
 interp (Var name) env = case lookup name env of
-  Nothing-> Left "unbound variable"
-  Just x -> Right x 
-interp (Con i) env = Right $ Num i 
+  Nothing-> return Wrong
+  Just x -> return x 
+interp (Con i) env = return $ Num i 
 interp (ma :+: mb) env = do
   a <- interp ma env
   b <-interp mb env
   case (a,b) of 
-    (Num i,Num j) -> Right $ Num (i+j)
-    (_,_) -> Left "should be numbers "
+    (Num i,Num j) -> return $ Num (i+j)
+    (_,_) -> return Wrong
 interp (Lam x e) env = return $ Fun (\v -> interp e ((x,v):env))
 interp (App t1 t2 ) env = do 
   m1 <- interp t1 env
   m2 <- interp t2 env
   case (m1,m2) of 
     (Fun x,y) -> x y
-    (_,_) ->  Left "should de function" 
+    (_,_) -> return Wrong 
+interp (Fail) env = []
+interp (Amb u v ) env = interp u env ++ interp v env
 -- test :: Term -> String
 -- test t = showM $ interp t []
 
