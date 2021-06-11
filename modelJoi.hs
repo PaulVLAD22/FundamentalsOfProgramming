@@ -3,7 +3,7 @@ import Data.List
 
 type Name = String
 
-data  Pgm  = Pgm [Name] Stmt
+data  Pgm  = Pgm Env Stmt
         deriving (Read, Show)
 
 data Stmt = Skip | Stmt ::: Stmt | If BExp Stmt Stmt| Name := AExp| While BExp Stmt
@@ -50,32 +50,6 @@ instance Monad IntState where
 
 type Env = [(Name, Integer)]
 
-modify :: (Integer -> Integer) -> IntState ()
-modify f = IntState (\s -> ((), f s))
-
-get :: IntState Integer
-get = IntState (\s -> (s, s))
-
-tickS :: IntState ()
-tickS = modify (+ 1)-- la writer dam parametru string care se adauga
--- aici dam parametru functie care modifica starea in functie de cum vrem
-
-
-add (Lit i) (Lit j) = return (Lit $ i + j)
-add _ _ = return $ Lit 0
-
-interp (Var x) env = case lookup x env of 
-  Nothing->return $ Lit 0
-  Just x -> return $ Lit x
-
-interp (Lit i) _ = return $ Lit i 
-
-interp (t1 :+: t2) env = do
-    v1 <- interp t1 env
-    v2 <- interp t2 env
-    tickS
-    add v1 v2
-
 
 aEval :: AExp -> Env -> Integer
 aEval (Lit i) env= i 
@@ -94,7 +68,7 @@ bEval (Not b) env = not (bEval b env)
 
 sEval :: Stmt -> Env -> Env
 sEval Skip env = env
-sEval (st1 ::: st2) env = sEval st2 (env++sEval st1 env)
+sEval (st1 ::: st2) env = sEval st2 (sEval st1 env)
 sEval (If b st1 st2) env =  if (bEval b env) then (sEval st1 env) else (sEval st2 env) 
 
 sEval (name := exp) env =  (name, (aEval exp env)) : filter (\(k,v) -> k /= name) env
@@ -104,22 +78,20 @@ sEval (While cond st) env = case (bEval cond env) of
   False -> env
 
 
-envFromNames :: [Name] -> Env
-envFromNames names = [(name, 0) | name <- names]
 
-pEval :: Pgm -> Env
-pEval (Pgm lvar st) = sEval st (envFromNames lvar)  
+pEval :: Pgm -> (Env, Env)
+pEval (Pgm e s) = (e, sEval s e)
+
 
 
  
 factStmt :: Stmt
 factStmt =
-  "p" := Lit 1 ::: "n" := Lit 3 :::
   While (Not (Var "n" :==: Lit 0))
     ( "p" := Var "p" :*: Var "n" :::
       "n" := Var "n" :+: Lit (-1)
     )
 
 
-test1 test= pEval $ Pgm [] test
+test1 test= pEval $ Pgm [("p",1),("n",3)] test
 

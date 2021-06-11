@@ -21,6 +21,7 @@ instance  Functor WriterS where
 
 tell :: String -> WriterS () 
 tell log = Writer ((), [log])
+
   
 logIncrement :: Int  -> WriterS Int
 logIncrement x =do 
