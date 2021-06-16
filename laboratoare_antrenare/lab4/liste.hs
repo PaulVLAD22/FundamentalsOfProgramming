@@ -1,33 +1,31 @@
+
 type Name = String
 
 data Term = Var Name
-          | Con Integer
-          | Term :+: Term
-          | Lam Name Term
-          | App Term Term
-          | Fail 
-          | Amb Term Term
+  | Con Integer
+  | Term :+: Term
+  | Lam Name Term
+  | App Term Term
+  | Fail
+  | Amb Term Term 
   deriving (Show)
 
-type M a= [a]
-
-showM :: Show a => M a -> String
-showM x = show x
-
 data Value = Num Integer
-           | Fun (Value -> M Value)
-           | Wrong
+  | Fun (Value -> M Value)
+  | Wrong
 
 instance Show Value where
- show (Num x) = show x
- show (Fun _) = "<function>"
- show Wrong   = "<wrong>"
+  show (Num x) = show x
+  show (Fun _) = "<function>"
+  show Wrong = "<wrong>"
 
 type Environment = [(Name, Value)]
+--maybe
+type M a= [a]
 
 apply :: Value -> Value -> M Value
-apply (Fun k) v = k v -- aplica functie peste valoare (cica k pune v in monada)
-apply _ _ = []
+apply (Fun k) v =  k v -- aplica functie peste valoare (cica k pune v in monada)
+apply _ _ = return Wrong
 
 add (Num x) (Num y) = return $ Num (x+y) 
 add _ _ =return Wrong 
@@ -53,9 +51,12 @@ interp (t1 :+: t2) env = do
 test :: Term -> String
 test t = show $ interp t []
 
-pgm1:: Term
-pgm1 = App
-          (Lam "x" ((Var "x") :+: (Var "x")))
-          ((Con 10) :+:  (Con 11))
--- test pgm
--- test pgm1
+pgm :: Term
+pgm = App
+        (Lam "x" (Var "x" :+: Var "x"))
+        (Con 10 :+: Con 11)
+
+myTest = do
+    test pgm
+
+-- afiseaza dubios
