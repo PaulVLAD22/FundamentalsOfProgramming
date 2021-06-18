@@ -1,4 +1,3 @@
-
 newtype EnvReader a = Reader { runEnvReader :: Environment -> a }
 
 

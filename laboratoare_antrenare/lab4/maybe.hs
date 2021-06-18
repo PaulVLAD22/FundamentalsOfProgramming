@@ -1,3 +1,4 @@
+
 type Name = String
 
 data Term = Var Name
