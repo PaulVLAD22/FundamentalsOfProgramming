@@ -1,21 +1,11 @@
--- nu cunosc
 
 newtype IntState a = IntState { runIntState :: Integer -> (a, Integer) }
 
--- identity
-instance Monad IntState where
-    return va = IntState (a,\x-> x)
-    ma >>= k = let
-                (a,x) = runIntState ma
-                (b,y) = runIntState (k a)
-                in IntState (a,x+y)
-
-
-instance  Functor IntState where              
-  fmap f ma = pure f <*> ma 
-
 instance Show a => Show (IntState a) where
-    show x = show $ runIntState x
+    show x = show $ runIntState x 0
+
+instance Functor IntState where
+    fmap f ma = pure f <*> ma
 
 instance Applicative IntState where
     pure = return
@@ -23,18 +13,26 @@ instance Applicative IntState where
         f <- mf
         f <$> ma
 
-type M = IntState
-
---lab 4 inceput
+instance Monad IntState where
+    return a = IntState (\s -> (a, s))
+    
+    m >>= k = IntState (\s ->
+        let (a, aState) = runIntState m s
+        in runIntState (k a) aState)
 
 type Name = String
+type Environment = [(Name, Value)]
+
+type M a = IntState a
+
+--
+
 data Term = Var Name
             | Con Integer
             | Term :+: Term
             | Lam Name Term
             | App Term Term
-            
-    deriving (Show)
+            | Count
 
 data Value = Num Integer
             | Fun (Value -> M Value)
@@ -45,47 +43,64 @@ instance Show Value where
     show (Fun _) = "<function>"
     show Wrong = "<wrong>"
 
-type Environment = [(Name, Value)]
-
 --
--- test asta n am inteles
 
+modify :: (Integer -> Integer) -> IntState ()
+modify f = IntState (\s -> ((), f s))
+
+get :: IntState Integer
+get = IntState (\s -> (s, s))
+
+tickS :: IntState ()
+tickS = modify (+ 1)-- la writer dam parametru string care se adauga
+-- aici dam parametru functie care modifica starea in functie de cum vrem
+
+add :: Value -> Value -> M Value
+add (Num i) (Num j) = return (Num $ i + j)
+add _ _ = return Wrong
+
+apply :: Value -> Value -> M Value
+apply (Fun k) v = k v
+apply _ _ = return Wrong
 
 lookupM :: Name -> Environment -> M Value
 lookupM x env = case lookup x env of
     Just v -> return v
     Nothing -> return Wrong
 
-add :: Value -> Value -> M Value
-add (Num i) (Num j) = return (Num $ i + j) --adunam numai numere
-add _ _ = return Wrong
-
-apply :: Value -> Value -> M Value
-apply (Fun k) v = k v -- aplica functie peste valoare (cica k pune v in monada)
-apply _ _ = return Wrong
-
 --
 
 interp :: Term -> Environment -> M Value
 interp (Var x) env = lookupM x env
 interp (Con i) _ = return $ Num i
-interp (Lam x e) env = return $
-    Fun $ \v -> interp e ((x, v) : env)--evaluam functia adaugand la mediul de evaluare valoarea v (parametru)
+interp (Lam x e) env = do
+    return $ Fun $ \v -> interp e ((x, v) : env)
+
+interp Count _ = return Wrong
+
+interp (Count :+: t1) env = do
+    v1 <- interp t1 env
+    tickS
+    return v1
+
+interp (t1 :+: Count) env = do
+    v1 <- interp t1 env
+    tickS
+    return v1
 
 interp (t1 :+: t2) env = do
-    v1 <- interp t1 env -- interpretam t1 in functie de env
+    v1 <- interp t1 env
     v2 <- interp t2 env
+    tickS
     add v1 v2
 
 interp (App t1 t2) env = do
     f <- interp t1 env
     v <- interp t2 env
+    tickS
     apply f v
 
 pgm :: Term
 pgm = App
         (Lam "x" (Var "x" :+: Var "x"))
-        (Con 10 :+: Con 11)
-
-myTest = do
-    test pgm
+        (Con 10 :+: Con 20)
