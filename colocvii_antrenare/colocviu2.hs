@@ -22,6 +22,8 @@ stmt Pop env = init env
 stmt (Push x) env = env++[x]
 stmt (Plus) env = init (init env)++[last env + last (init env)]
 stmt (Dup) env = env++[last env]
+stmt (Loop sts) env = env
+
 
 stmt' :: Stmt -> Env' -> Env'
 stmt' _ Nothing = Nothing 
@@ -29,7 +31,7 @@ stmt' Pop (Just env) = Just $ init env
 stmt' (Push x) (Just env) = Just $ env++[x]
 stmt' (Plus) (Just env) = Just $ init (init env)++[last env + last (init env)]
 stmt' (Dup) (Just env) = Just $ env++[last env]
-
+stmt' (Loop sts) env = env
 
 stmts :: [Stmt] -> Env -> Env
 stmts (Push x:sts) env= stmts sts (stmt (Push x) env)
