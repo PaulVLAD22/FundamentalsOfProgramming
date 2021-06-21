@@ -26,12 +26,14 @@ stmt (Loop sts) env = env
 
 
 stmt' :: Stmt -> Env' -> Env'
-stmt' _ Nothing = Nothing 
+
 stmt' Pop (Just env) = Just $ init env
-stmt' (Push x) (Just env) = Just $ env++[x]
+stmt' (Push x) (Just env) = Just $ [x]++env
 stmt' (Plus) (Just env) = Just $ init (init env)++[last env + last (init env)]
 stmt' (Dup) (Just env) = Just $ env++[last env]
-stmt' (Loop sts) env = env
+stmt' (Loop sts) (Just env) = Just env
+
+stmt' _ Nothing = Nothing
 
 stmts :: [Stmt] -> Env -> Env
 stmts (Push x:sts) env= stmts sts (stmt (Push x) env)
@@ -43,10 +45,18 @@ stmts _ env = env
 
 stmts' :: [Stmt] -> Env' -> Env'
 stmts' (Push x:sts) env= stmts' sts (stmt' (Push x) env)
-stmts' (Pop:sts) env = if (length env>0) then stmts' sts (stmt' Pop env) else Nothing 
-stmts' (Plus:sts) env = if (length env>1) then stmts' sts (stmt' Plus env) else Nothing 
-stmts' (Dup:sts) env = if (length env>0) then stmts' sts (stmt' Dup env) else Nothing 
-stmts' (Loop [st]:sts) env = if (length env /= 1) then stmts' (Loop [st]:sts) (stmt' st env) else stmts' sts env
+stmts' (Pop:sts) env = do 
+  envBun <- env 
+  if (length envBun>0) then stmts' sts (stmt' Pop env) else Nothing 
+stmts' (Plus:sts) env = do 
+  envBun <- env 
+  if (length envBun>1) then stmts' sts (stmt' Plus env) else Nothing 
+stmts' (Dup:sts) env = do
+  envBun <- env   
+  if (length envBun>0) then stmts' sts (stmt' Dup env) else Nothing 
+stmts' (Loop [st]:sts) env = do 
+  envBun <- env 
+  if (length envBun /= 1) then stmts' (Loop [st]:sts) (stmt' st env) else stmts' sts env
 stmts' _ env = env 
 
 

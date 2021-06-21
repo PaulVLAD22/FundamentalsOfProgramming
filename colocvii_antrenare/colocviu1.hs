@@ -7,8 +7,6 @@ Testare se face apeland `run test`.
 -}
 
 
--- ai de facut c
-
 
 data Prog  = Stmt ::: Prog | Off
 data Stmt  = Mem := Expr

@@ -4,6 +4,8 @@ Un program este o expresie de tip Pgmiar rezultatul executiei este ultima stare 
 Executia unui program se face apeland pEval.
 -}
 
+--n am facut c)
+
 import Data.Maybe
 import Data.List
 
